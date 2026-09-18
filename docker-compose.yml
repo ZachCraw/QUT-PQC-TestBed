@@ -1,0 +1,59 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: pqc-server
+    hostname: server
+    volumes:
+      - ./server/entrypoint.sh:/entrypoint.sh:ro
+      - ./certs:/app/certs
+      - ./results:/app/results
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    networks:
+      pqc-net:
+        ipv4_address: 172.28.0.10
+
+  client:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: pqc-client
+    hostname: client
+    depends_on:
+      - server
+    volumes:
+      - ./client/entrypoint.sh:/entrypoint.sh:ro
+      - ./certs:/app/certs
+      - ./results:/app/results
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    networks:
+      pqc-net:
+        ipv4_address: 172.28.0.11
+
+  attacker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: pqc-attacker
+    hostname: attacker
+    depends_on:
+      - server
+      - client
+    volumes:
+      - ./attacker/entrypoint.sh:/entrypoint.sh:ro
+      - ./results:/app/results
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      pqc-net:
+        ipv4_address: 172.28.0.12
+
+networks:
+  pqc-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
