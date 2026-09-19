@@ -20,18 +20,29 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Build liboqs ------------------------------------------------------------
+# Pinned to a tagged release rather than `main`: liboqs and oqs-provider's
+# `main` branches are NOT guaranteed to be in sync with each other at any
+# given moment (they're developed in parallel). Use the matched release pair
+# documented in oqs-provider's release notes instead. Check
+# https://github.com/open-quantum-safe/oqs-provider/releases for the current
+# "guaranteed in sync with liboqs vX.Y.Z" pairing before bumping these.
+ARG LIBOQS_VERSION=0.15.0
+ARG OQS_PROVIDER_VERSION=0.11.0
+
 WORKDIR /opt
-RUN git clone --depth 1 --branch main https://github.com/open-quantum-safe/liboqs.git && \
+RUN git clone --depth 1 --branch ${LIBOQS_VERSION} https://github.com/open-quantum-safe/liboqs.git && \
     cmake -S liboqs -B liboqs/build -GNinja \
         -DCMAKE_INSTALL_PREFIX=/opt/liboqs/install \
         -DOQS_USE_OPENSSL=OFF \
-        -DBUILD_SHARED_LIBS=ON && \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_TESTING=OFF && \
     ninja -C liboqs/build install
 
 # --- Build the OQS OpenSSL 3.x provider --------------------------------------
-RUN git clone --depth 1 --branch main https://github.com/open-quantum-safe/oqs-provider.git && \
+RUN git clone --depth 1 --branch ${OQS_PROVIDER_VERSION} https://github.com/open-quantum-safe/oqs-provider.git && \
     cmake -S oqs-provider -B oqs-provider/build -GNinja \
-        -Dliboqs_DIR=/opt/liboqs/install/lib/cmake/liboqs && \
+        -Dliboqs_DIR=/opt/liboqs/install/lib/cmake/liboqs \
+        -DBUILD_TESTING=OFF && \
     ninja -C oqs-provider/build
 
 # Drop the compiled provider into OpenSSL's module directory so `openssl`

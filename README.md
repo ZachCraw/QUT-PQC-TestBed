@@ -15,9 +15,9 @@ pqc-testbed/
 │   └── openssl-oqs.cnf      # OpenSSL config that activates the oqs provider
 ├── server/entrypoint.sh     # generates certs, runs hybrid TLS 1.3 server
 ├── client/entrypoint.sh     # connects with hybrid TLS 1.3, logs result to CSV
-├── attacker/entrypoint.sh   # idle placeholder; same network, NET_ADMIN/NET_RAW
-├── certs/                   # shared volume; certs land here at runtime
-└── results/                 # shared volume; handshake_log.csv lands here
+├── attacker/entrypoint.sh   # idle placeholder — same network, NET_ADMIN/NET_RAW
+├── certs/                   # shared volume — certs land here at runtime
+└── results/                 # shared volume — handshake_log.csv lands here
 ```
 
 All three containers build from the **same Dockerfile** (so you only compile
@@ -68,6 +68,6 @@ openssl s_client -connect server:4433 -tls1_3 -groups X25519MLKEM768 -CAfile /ap
 To compare against a classical baseline or pure PQC, just change `-groups`
 in both `server/entrypoint.sh` and `client/entrypoint.sh`:
 
-- `X25519`; classical baseline
-- `MLKEM768`; pure post-quantum (no classical fallback)
-- `X25519MLKEM768`; hybrid (default here, matches the supervisor's paper)
+- `X25519` — classical baseline
+- `MLKEM768` — pure post-quantum (no classical fallback)
+- `X25519MLKEM768` — hybrid (default here, matches the supervisor's paper)
