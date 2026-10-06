@@ -1,0 +1,45 @@
+name: crawford-frag
+
+x-env: &env
+  SCENARIO: ${SCENARIO:-baseline}   # baseline | kem | v1
+  CHANNEL: ${CHANNEL:-eth}          # eth | plc
+  MUTUAL: ${MUTUAL:-0}              # 1 = mutual TLS auth (ISO 15118-20 style)
+  CHAIN: ${CHAIN:-0}                # 1 = server sends leaf + CA cert
+  DELAY_MS: ${DELAY_MS:-15}         # netem delay, applied on EACH side's egress
+  LOSS_PCT: ${LOSS_PCT:-5}          # netem loss %, applied on EACH side's egress
+  RATE: ${RATE:-}                   # optional, e.g. 5mbit
+
+services:
+  server:
+    build: .
+    image: crawford-frag:latest
+    container_name: frag-server
+    hostname: server
+    init: true
+    cap_add: [NET_ADMIN, NET_RAW]
+    environment: *env
+    volumes: ["./scripts:/scripts:ro", "./certs:/certs", "./results:/results"]
+    command: ["/scripts/server.sh"]
+    networks: [chan]
+
+  client:
+    build: .
+    image: crawford-frag:latest
+    container_name: frag-client
+    hostname: client
+    init: true
+    cap_add: [NET_ADMIN, NET_RAW]
+    environment: *env
+    volumes: ["./scripts:/scripts:ro", "./certs:/certs", "./results:/results"]
+    command: ["sleep", "infinity"]
+    depends_on: [server]
+    networks: [chan]
+
+networks:
+  chan:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "${MTU:-1500}"
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
