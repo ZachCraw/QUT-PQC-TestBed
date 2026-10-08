@@ -45,11 +45,10 @@ RUN git clone --depth 1 --branch ${OQS_PROVIDER_VERSION} https://github.com/open
         -DBUILD_TESTING=OFF && \
     ninja -C oqs-provider/build
 
-# Drop the compiled provider into OpenSSL's module directory so `openssl`
-# picks it up via the config file below (no code changes needed elsewhere).
-RUN OPENSSL_MODULES_DIR="$(openssl version -d | cut -d '"' -f2)/ossl-modules" && \
-    mkdir -p "$OPENSSL_MODULES_DIR" && \
-    cp /opt/oqs-provider/build/lib/oqsprovider.so "$OPENSSL_MODULES_DIR"/
+RUN MODDIR="$(openssl version -m | cut -d '"' -f2)" && \
+    mkdir -p "$MODDIR" && \
+    cp "$(find /opt/oqs-provider/build -name oqsprovider.so | head -1)" "$MODDIR"/ && \
+    ls -l "$MODDIR"/oqsprovider.so
 
 COPY docker/openssl-oqs.cnf /etc/ssl/openssl-oqs.cnf
 ENV OPENSSL_CONF=/etc/ssl/openssl-oqs.cnf
